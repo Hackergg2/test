@@ -14,6 +14,10 @@ CORS(app)  # Разрешаем CORS для запросов с сайта
 # Хранение кликов в памяти (для простоты)
 clicks_data = {}
 
+@app.route('/')
+def index():
+    return "Сервер запущен и работает!"
+
 @app.route('/increment_clicks', methods=['POST'])
 def increment_clicks():
     data = request.json
@@ -44,9 +48,7 @@ def send_welcome(message):
                      parse_mode='HTML',
                      reply_markup=keyboard)
 
-def run_flask():
-    app.run(host='0.0.0.0', port=5000)
-
 if __name__ == '__main__':
-    threading.Thread(target=run_flask).start()
+    # НЕ запускаем Flask через app.run(), Render сделает это за нас через gunicorn
+    # Просто запускаем бота
     bot.infinity_polling()
