@@ -191,36 +191,62 @@
       document.getElementById("count").textContent = count;
     }
 
-    // Если мы в Telegram Web App
-    if (window.Telegram && window.Telegram.WebApp) {
-      const tg = window.Telegram.WebApp;
-      tg.ready();
+    // Получаем параметры из URL
+    function getUrlParam(name) {
+      return new URLSearchParams(window.location.search).get(name);
+    }
 
-      const user = tg.initDataUnsafe.user;
-
-      // Ник
+    // Установка ника и аватара
+    function setUserInfo(nick, avatarUrl) {
       const nicknameEl = document.getElementById('nickname');
-      if (user && user.username) {
-        nicknameEl.textContent = '@' + user.username;
-      } else if (user && user.first_name) {
-        nicknameEl.textContent = user.first_name;
+      const avatarEl = document.getElementById('avatar');
+
+      if (nick) {
+        nicknameEl.textContent = nick.startsWith('@') ? nick : '@' + nick;
       } else {
-        nicknameEl.textContent = '@unknown';
+        nicknameEl.textContent = '@guest';
       }
 
-      // Аватар
-      const avatarEl = document.getElementById('avatar');
-      if (user && user.photo_url) {
-        avatarEl.innerHTML = `<img src="${user.photo_url}" alt="Avatar" />`;
+      if (avatarUrl) {
+        avatarEl.innerHTML = `<img src="${avatarUrl}" alt="Avatar" />`;
       } else {
-        // Если фото нет — оставим смайлик
         avatarEl.textContent = '🙂';
       }
-    } else {
-      // Не в Telegram - можно вручную указать ник и аватар
-      document.getElementById('nickname').textContent = '@your_nick';
-      document.getElementById('avatar').textContent = '🙂';
     }
+
+    // Основная логика определения ника и аватара
+    (function() {
+      const nickFromUrl = getUrlParam('nick');
+      const avatarFromUrl = getUrlParam('avatar');
+
+      if (window.Telegram && window.Telegram.WebApp) {
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+
+        const user = tg.initDataUnsafe.user;
+        let nick = null;
+        let avatar = null;
+
+        if (user) {
+          if (user.username) nick = '@' + user.username;
+          else if (user.first_name) nick = user.first_name;
+          if (user.photo_url) avatar = user.photo_url;
+        }
+
+        // Если ник из Telegram есть, используем его, иначе из URL
+        if (!nick && nickFromUrl) {
+          nick = nickFromUrl.startsWith('@') ? nickFromUrl : '@' + nickFromUrl;
+        }
+        if (!avatar && avatarFromUrl) {
+          avatar = avatarFromUrl;
+        }
+
+        setUserInfo(nick, avatar);
+      } else {
+        // Не в Telegram — используем URL параметры или дефолт
+        setUserInfo(nickFromUrl, avatarFromUrl);
+      }
+    })();
   </script>
 
 </body>
